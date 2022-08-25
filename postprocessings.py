@@ -46,9 +46,15 @@ def broadcast_matmul(mat, vec):
 
 
 def compute_RE(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig):
-    f = h5py.File(f"{output.basename}/{output.filename}", 'r')
-    
     max_time = tracking.max_iterations
+
+    f = h5py.File(f"{output.path}/{output.basename}.h5", 'r')
+    
+    fm = []
+    fm_r = []
+    for i in tqdm(range(max_time+1)):
+        fm.append(f[f"{i}/tangent"][:])
+        fm_r.append(f[f"{i}/tangent_rev"][:])
 
     random = np.random.normal(size=(max_time * 2 * 4)).reshape(max_time * 2, 4)
     for i in range(random.shape[0]):
@@ -56,15 +62,15 @@ def compute_RE(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingCo
 
     re_values = np.zeros((max_time, coord.total_samples)) * np.nan
     
-    for t in tqdm(range(1, max_time)):
+    for t in tqdm(range(0, max_time)):
         bf = np.array([random[-1] for i in range(coord.total_samples)])
-        for i in tqdm(range(t)):
-            bf = broadcast_matmul(f[f"{i}/tangent"][:], bf) + random[None, i]
+        bf = broadcast_matmul(fm[t][:], bf) + random[None, t]
 
-        for i in tqdm(range(t)):
-            bf = broadcast_matmul(f[f"{t-i-1}/tangent_rev"][:], bf) + random[None, t+i]
+        bf_rev = bf.copy()
+        for i in (range(t)):
+            bf_rev = broadcast_matmul(fm_r[t-i-1][:], bf_rev) + random[None, t+i]
 
-        for i, r in enumerate(bf):
+        for i, r in enumerate(bf_rev):
             re_values[t, i] = np.linalg.norm(r)
 
     f.close()
@@ -72,12 +78,12 @@ def compute_RE(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingCo
 
 
 def compute_MEGNO(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig):
-    f = h5py.File(f"{output.basename}/{output.filename}", 'r')
+    f = h5py.File(f"{output.path}/{output.basename}.h5", 'r')
     
     max_time = tracking.max_iterations
 
     le_value_list = []
-    for i in range(max_time):
+    for i in tqdm(range(max_time)):
         if i == 0:
             matrices = f[f"{i}/tangent"][:]
         else:
@@ -104,24 +110,31 @@ def compute_MEGNO(coord: CoordinateConfig, henon: HenonConfig, tracking: Trackin
     return y_vals
 
 
-def frequency_map_analysis(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig):
-    f = h5py.File(f"{output.basename}/{output.filename}", 'r')
+def frequency_map_analysis(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig, n_samples=1000):
+    f = h5py.File(f"{output.path}/{output.basename}.h5", 'r')
     max_time = tracking.max_iterations
-    times = tracking.get_samples()
+    times = np.linspace(2, max_time, n_samples, dtype=int)
+    t_half_list = times // 2
+
+    fm = {
+        "x" : f["x"][:],
+        "y" : f["y"][:],
+        "px" : f["px"][:],
+        "py" : f["py"][:],
+    }
+    f.close()
 
     fma_data = np.zeros((len(times), coord.total_samples)) * np.nan
-    for i in range(coord.total_samples):
-        x_data = f["x"][:, i]
-        px_data = f["px"][:, i]
-        y_data = f["y"][:, i]
-        py_data = f["py"][:, i]
-        for j, t in enumerate(times):
-            t_half = int(t / 2)
+    for i in tqdm(range(coord.total_samples)):
+        x_data = fm["x"][:, i]
+        px_data = fm["px"][:, i]
+        y_data = fm["y"][:, i]
+        py_data = fm["py"][:, i]
+        for j, t_half in enumerate(t_half_list):
             tune_1_x = birkhoff_tune(x_data[:t_half], px_data[:t_half])
             tune_1_y = birkhoff_tune(y_data[:t_half], py_data[:t_half])
             tune_2_x = birkhoff_tune(x_data[t_half:t_half*2], px_data[t_half:t_half*2])
             tune_2_y = birkhoff_tune(y_data[t_half:t_half*2], py_data[t_half:t_half*2])
             fma_data[j, i] = np.sqrt((tune_1_x - tune_2_x)**2 + (tune_1_y - tune_2_y)**2)
-    f.close()
 
-    return fma_data
+    return t_half_list, fma_data

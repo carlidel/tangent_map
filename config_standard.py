@@ -102,3 +102,67 @@ class TrackingConfig:
 class OutputConfig:
     path: str
     basename: str
+
+
+def get_config(path):
+    with open(path) as f:
+        config = json.load(f)
+    # pass config['coords'] to CoordinateConfig
+    coords = CoordinateConfig(
+        coord1=config['coords']['coord1'],
+        coord2=config['coords']['coord2'],
+        coord1_min=config['coords']['coord1_min'],
+        coord1_max=config['coords']['coord1_max'],
+        coord2_min=config['coords']['coord2_min'],
+        coord2_max=config['coords']['coord2_max'],
+        samples_per_side=config['coords']['samples_per_side'])
+
+    # pass config['henon'] to HenonConfig
+    henon = HenonConfig(
+        omega_x=config['henon']['omega_x'],
+        omega_y=config['henon']['omega_y'],
+        epsilon=config['henon']['epsilon'],
+        mu=config['henon']['mu'])
+
+    # pass config['tracking'] to TrackingConfig
+    tracking = TrackingConfig(
+        max_iterations=config['tracking']['max_iterations'],
+        n_samples=config['tracking']['n_samples'],
+        sampling_method=config['tracking']['sampling_method'],
+        analysis_type=config['tracking']['analysis_type'])
+
+    long_tracking = TrackingConfig(
+        max_iterations=config['tracking']['max_iterations_long'],
+        n_samples=config['tracking']['max_iterations_long'],
+        sampling_method="all",
+        analysis_type="stability")
+
+    # load basename
+    basename = config['output']['basename']
+    path = config['output']['path']
+
+    return coords, henon, tracking, long_tracking, path, basename
+
+
+def get_output_config(path, basename):
+    o_tangent_stuff = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}tangent_stuff")
+
+    o_tangent_raw = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}tangent_raw")
+
+    o_stability = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}stability")
+
+    o_coordinates = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}coordinates")
+
+    o_rem = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}rem")
+
+    return o_tangent_stuff, o_tangent_raw, o_stability, o_coordinates, o_rem

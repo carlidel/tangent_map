@@ -27,8 +27,8 @@ coords = CoordinateConfig(
 henon = HenonConfig(
     omega_x=0.31,
     omega_y=0.32,
-    epsilon=0.0,
-    mu=0.0)
+    epsilon=64.0,
+    mu=0.1)
 
 tracking = TrackingConfig(
     max_iterations=10000,
@@ -38,30 +38,30 @@ tracking = TrackingConfig(
 
 # output = OutputConfig(
 #     path="/home/HPC/camontan/turchetti_paper/output",
-#     basename="tangent_stuff")
+#     basename="ter_tangent_stuff")
 
 # track_tangent_map(coords, henon, tracking, output)
 
 # output = OutputConfig(
 #     path="/home/HPC/camontan/turchetti_paper/output",
-#     basename="tangent_raw")
+#     basename="ter_tangent_raw")
 
 # track_tangent_map_raw(coords, henon, tracking, output)
 
 # output = OutputConfig(
 #     path="/home/HPC/camontan/turchetti_paper/output",
-#     basename="stability")
+#     basename="ter_stability")
 
 # track_stability(coords, henon, tracking, output)
 
 output = OutputConfig(
     path="/home/HPC/camontan/turchetti_paper/output",
-    basename="coordinates")
+    basename="ter_coordinates")
 
 track_coordinates(coords, henon, tracking, output)
 
 output = OutputConfig(
     path="/home/HPC/camontan/turchetti_paper/output",
-    basename="rem")
+    basename="ter_rem")
 
 track_rem(coords, henon, tracking, output)

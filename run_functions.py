@@ -107,7 +107,7 @@ def track_coordinates(coord: CoordinateConfig, henon: HenonConfig, tracking: Tra
         henon.epsilon
     )
 
-    with h5py.File(f"{output.path}/{output.basename}.h5", "w+") as f:
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
         f.create_dataset(f"x", compression="gzip", shape=(tracking.max_iterations, coord.total_samples), dtype=np.float64)
         f.create_dataset(f"px", compression="gzip", shape=(tracking.max_iterations, coord.total_samples), dtype=np.float64)
         f.create_dataset(f"y", compression="gzip", shape=(tracking.max_iterations, coord.total_samples), dtype=np.float64)

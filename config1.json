@@ -1,0 +1,28 @@
+{
+    "coords": {
+        "coord1": "x",
+        "coord2": "y",
+        "coord1_min": 0.0,
+        "coord1_max": 0.25,
+        "coord2_min": 0.0,
+        "coord2_max": 0.25,
+        "samples_per_side": 100
+    },
+    "henon": {
+        "omega_x": 0.31,
+        "omega_y": 0.32,
+        "epsilon": 0.0,
+        "mu": 0.0
+    },
+    "tracking": {
+        "max_iterations": 10000,
+        "max_iterations_long": 100000000,
+        "n_samples": 10000,
+        "sampling_method": "all",
+        "analysis_type": "tangent_map"
+    },
+    "output": {
+        "path": "/home/HPC/camontan/turchetti_paper/output",
+        "basename": ""
+    }
+}
