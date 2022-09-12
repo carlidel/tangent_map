@@ -45,7 +45,7 @@ def broadcast_matmul(mat, vec):
     return result
 
 
-def compute_RE(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig):
+def compute_RE(config, coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig):
     max_time = tracking.max_iterations
 
     f = h5py.File(f"{output.path}/{output.basename}.h5", 'r')
@@ -60,15 +60,53 @@ def compute_RE(coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingCo
     for i in range(random.shape[0]):
         random[i] /= np.linalg.norm(random[i])
 
-    re_values = np.zeros((max_time, coord.total_samples)) * np.nan
-    
-    for t in tqdm(range(0, max_time)):
-        bf = np.array([random[-1] for i in range(coord.total_samples)])
-        bf = broadcast_matmul(fm[t][:], bf) + random[None, t]
+    sampling_times = config["postprocessing"]["full_samples"]
 
+    re_values = np.zeros((len(sampling_times), coord.total_samples)) * np.nan
+    
+    for idx, t in tqdm(enumerate(sampling_times), total=len(sampling_times)):
+        bf = np.array([random[-1] for i in range(coord.total_samples)])
+
+        for i in range(t):
+            bf = broadcast_matmul(fm[t][:], bf) + random[None, t]
         bf_rev = bf.copy()
         for i in (range(t)):
             bf_rev = broadcast_matmul(fm_r[t-i-1][:], bf_rev) + random[None, t+i]
+
+        for i, r in enumerate(bf_rev):
+            re_values[idx, i] = np.linalg.norm(r)
+
+    f.close()
+    return re_values
+
+
+def compute_RE_full(config, coord: CoordinateConfig, henon: HenonConfig, tracking: TrackingConfig, output: OutputConfig):
+    max_time = tracking.max_iterations
+
+    f = h5py.File(f"{output.path}/{output.basename}.h5", 'r')
+    
+    fm = []
+    fm_r = []
+    for i in tqdm(range(max_time+1)):
+        fm.append(f[f"{i}/tangent"][:])
+        fm_r.append(f[f"{i}/tangent_rev"][:])
+
+    random = np.random.normal(size=(max_time * 2 * 4)).reshape(max_time * 2, 4)
+    for i in range(random.shape[0]):
+        random[i] /= np.linalg.norm(random[i])
+
+    sampling_points = config["postprocessing"]["precise_initial_conditions"]
+
+    re_values = np.zeros((max_time, len(sampling_points))) * np.nan
+    
+    for t in tqdm(range(max_time)):
+        bf = np.array([random[-1] for i in range(len(sampling_points))])
+
+        for i in range(t):
+            bf = broadcast_matmul(fm[t][sampling_points], bf) + random[None, t]
+        bf_rev = bf.copy()
+        for i in (range(t)):
+            bf_rev = broadcast_matmul(fm_r[t-i-1][sampling_points], bf_rev) + random[None, t+i]
 
         for i, r in enumerate(bf_rev):
             re_values[t, i] = np.linalg.norm(r)

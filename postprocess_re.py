@@ -28,7 +28,12 @@ coords, henon, tracking, long_tracking, path, basename = get_config(args.config)
 
 _, o_tangent_raw, _, _, _ = get_output_config(path, basename)
 
-re_values = compute_RE(coords, henon, tracking, o_tangent_raw)
+re_values = compute_RE(args.config, coords, henon, tracking, o_tangent_raw)
 
 with open(f"{path}/{basename}{'_' if basename!='' else ''}RE.pkl", "wb") as f:
+    pickle.dump(re_values, f)
+
+re_values = compute_RE(args.config, coords, henon, tracking, o_tangent_raw)
+
+with open(f"{path}/{basename}{'_' if basename!='' else ''}RE_specific.pkl", "wb") as f:
     pickle.dump(re_values, f)

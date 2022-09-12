@@ -28,11 +28,11 @@ coords, henon, tracking, long_tracking, path, basename = get_config(args.config)
 
 o_tangent_stuff, o_tangent_raw, o_stability, o_coordinates, o_rem = get_output_config(path, basename)
 
+track_stability(coords, henon, long_tracking, o_stability)
+
 track_tangent_map(coords, henon, tracking, o_tangent_stuff)
 
 track_tangent_map_raw(coords, henon, tracking, o_tangent_raw)
-
-track_stability(coords, henon, long_tracking, o_stability)
 
 track_coordinates(coords, henon, tracking, o_coordinates)
 
