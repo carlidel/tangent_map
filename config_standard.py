@@ -1,3 +1,5 @@
+import copy
+import itertools
 import json
 from dataclasses import dataclass, field
 from typing import Literal
@@ -104,9 +106,37 @@ class OutputConfig:
     basename: str
 
 
-def get_config(path):
-    with open(path) as f:
-        config = json.load(f)
+def f_to_s_without_dot(f):
+    return str(f).replace('.', 'd').replace('[', '').replace(']', '').replace(' ', '').replace(',', '_')
+
+
+def unpack_scans(config: dict)->list[dict]:
+    keys = []
+    values = []
+    if 'scan' in config:
+        for key, val in config['scan'].items():
+            keys.append(key)
+            values.append(val)
+    else:
+        config["scan_name"] = "default"
+        return [config]
+
+    config_list = []
+    for vals in itertools.product(*values):
+        scan_name = ''    
+        config_list.append(copy.deepcopy(config))
+        for k, v in zip(keys, vals):
+            # split k into k1 and k2 using as delimiter ':'
+            k1, k2 = k.split(':')
+            config_list[-1][k1][k2] = v
+            scan_name += f'{k2}_{f_to_s_without_dot(v)}_'
+        config_list[-1].pop('scan')
+        config_list[-1]['scan_name'] = scan_name[:-1]
+
+    return config_list
+
+
+def get_config(config: dict):
     # pass config['coords'] to CoordinateConfig
     coords = CoordinateConfig(
         coord1=config['coords']['coord1'],
@@ -119,8 +149,8 @@ def get_config(path):
 
     # pass config['henon'] to HenonConfig
     henon = HenonConfig(
-        omega_x=config['henon']['omega_x'],
-        omega_y=config['henon']['omega_y'],
+        omega_x=config['henon']['omega_base'][0],
+        omega_y=config['henon']['omega_base'][1],
         epsilon=config['henon']['epsilon'],
         mu=config['henon']['mu'])
 
@@ -144,25 +174,25 @@ def get_config(path):
     return coords, henon, tracking, long_tracking, path, basename
 
 
-def get_output_config(path, basename):
+def get_output_config(path, basename, scan_name):
     o_tangent_stuff = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}tangent_stuff")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tangent_stuff")
 
     o_tangent_raw = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}tangent_raw")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tangent_raw")
 
     o_stability = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}stability")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_stability")
 
     o_coordinates = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}coordinates")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_coordinates")
 
     o_rem = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}rem")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_rem")
 
     return o_tangent_stuff, o_tangent_raw, o_stability, o_coordinates, o_rem

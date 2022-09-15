@@ -1,0 +1,36 @@
+{
+    "coords": {
+        "coord1": "x",
+        "coord2": "y",
+        "coord1_min": 0.0,
+        "coord1_max": 0.75,
+        "coord2_min": 0.0,
+        "coord2_max": 0.75,
+        "samples_per_side": 200
+    },
+    "henon": {
+        "omega_base": [0.31, 0.32],
+        "epsilon": 0.0,
+        "mu": 0.0
+    },
+    "tracking": {
+        "max_iterations": 10000,
+        "max_iterations_long": 100000000,
+        "n_samples": 10000,
+        "sampling_method": "all",
+        "analysis_type": "stability"
+    },
+    "output": {
+        "path": "/home/HPC/camontan/turchetti_paper/output",
+        "basename": "basic_scan"
+    },
+    "scan": {
+        "henon:omega_base": [
+            [0.168, 0.201],
+            [0.28, 0.31],
+            [0.31, 0.32]
+        ],
+        "henon:epsilon": [0.0, 16.0, 32.0, 64.0, 128.0, 256.0],
+        "henon:mu": [0.0, 0.01, 0.1, 1.0, 10.0]
+    }
+}
