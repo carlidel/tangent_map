@@ -22,7 +22,7 @@ class CoordinateConfig:
     c2_idx: int = field(init=False)
 
     def __post_init__(self):
-        self.total_samples = self.samples_per_side ** 2
+        self.total_samples = self.samples_per_side**2
 
         if self.coord1 == "x":
             self.c1_idx = 0
@@ -57,7 +57,7 @@ class CoordinateConfig:
         variables[self.c1_idx] = a
         variables[self.c2_idx] = b
         return variables
-        
+
 
 @dataclass
 class HenonConfig:
@@ -77,12 +77,7 @@ class TrackingConfig:
     n_samples: int
     sampling_method: Literal["linear", "log", "all"]
     analysis_type: Literal[
-        "coordinates",
-        "stability",
-        "tangent_map",
-        "rem",
-        "raw_tangent_map",
-        "MEGNO"
+        "coordinates", "stability", "tangent_map", "rem", "raw_tangent_map", "MEGNO"
     ]
 
     def __post_init__(self):
@@ -93,9 +88,11 @@ class TrackingConfig:
         if self.sampling_method == "linear":
             return np.linspace(1, self.max_iterations, self.n_samples, dtype=int)
         elif self.sampling_method == "log":
-            return np.logspace(1, np.log10(self.max_iterations), self.n_samples, dtype=int)
+            return np.logspace(
+                1, np.log10(self.max_iterations), self.n_samples, dtype=int
+            )
         elif self.sampling_method == "all":
-            return np.arange(1, self.max_iterations+1, dtype=int)
+            return np.arange(1, self.max_iterations + 1, dtype=int)
         else:
             raise ValueError("Invalid sampling method")
 
@@ -107,14 +104,21 @@ class OutputConfig:
 
 
 def f_to_s_without_dot(f):
-    return str(f).replace('.', 'd').replace('[', '').replace(']', '').replace(' ', '').replace(',', '_')
+    return (
+        str(f)
+        .replace(".", "d")
+        .replace("[", "")
+        .replace("]", "")
+        .replace(" ", "")
+        .replace(",", "_")
+    )
 
 
-def unpack_scans(config: dict)->list[dict]:
+def unpack_scans(config: dict) -> list[dict]:
     keys = []
     values = []
-    if 'scan' in config:
-        for key, val in config['scan'].items():
+    if "scan" in config:
+        for key, val in config["scan"].items():
             keys.append(key)
             values.append(val)
     else:
@@ -123,15 +127,15 @@ def unpack_scans(config: dict)->list[dict]:
 
     config_list = []
     for vals in itertools.product(*values):
-        scan_name = ''    
+        scan_name = ""
         config_list.append(copy.deepcopy(config))
         for k, v in zip(keys, vals):
             # split k into k1 and k2 using as delimiter ':'
-            k1, k2 = k.split(':')
+            k1, k2 = k.split(":")
             config_list[-1][k1][k2] = v
-            scan_name += f'{k2}_{f_to_s_without_dot(v)}_'
-        config_list[-1].pop('scan')
-        config_list[-1]['scan_name'] = scan_name[:-1]
+            scan_name += f"{k2}_{f_to_s_without_dot(v)}_"
+        config_list[-1].pop("scan")
+        config_list[-1]["scan_name"] = scan_name[:-1]
 
     return config_list
 
@@ -139,37 +143,41 @@ def unpack_scans(config: dict)->list[dict]:
 def get_config(config: dict):
     # pass config['coords'] to CoordinateConfig
     coords = CoordinateConfig(
-        coord1=config['coords']['coord1'],
-        coord2=config['coords']['coord2'],
-        coord1_min=config['coords']['coord1_min'],
-        coord1_max=config['coords']['coord1_max'],
-        coord2_min=config['coords']['coord2_min'],
-        coord2_max=config['coords']['coord2_max'],
-        samples_per_side=config['coords']['samples_per_side'])
+        coord1=config["coords"]["coord1"],
+        coord2=config["coords"]["coord2"],
+        coord1_min=config["coords"]["coord1_min"],
+        coord1_max=config["coords"]["coord1_max"],
+        coord2_min=config["coords"]["coord2_min"],
+        coord2_max=config["coords"]["coord2_max"],
+        samples_per_side=config["coords"]["samples_per_side"],
+    )
 
     # pass config['henon'] to HenonConfig
     henon = HenonConfig(
-        omega_x=config['henon']['omega_base'][0],
-        omega_y=config['henon']['omega_base'][1],
-        epsilon=config['henon']['epsilon'],
-        mu=config['henon']['mu'])
+        omega_x=config["henon"]["omega_base"][0],
+        omega_y=config["henon"]["omega_base"][1],
+        epsilon=config["henon"]["epsilon"],
+        mu=config["henon"]["mu"],
+    )
 
     # pass config['tracking'] to TrackingConfig
     tracking = TrackingConfig(
-        max_iterations=config['tracking']['max_iterations'],
-        n_samples=config['tracking']['n_samples'],
-        sampling_method=config['tracking']['sampling_method'],
-        analysis_type=config['tracking']['analysis_type'])
+        max_iterations=config["tracking"]["max_iterations"],
+        n_samples=config["tracking"]["n_samples"],
+        sampling_method=config["tracking"]["sampling_method"],
+        analysis_type=config["tracking"]["analysis_type"],
+    )
 
     long_tracking = TrackingConfig(
-        max_iterations=config['tracking']['max_iterations_long'],
-        n_samples=config['tracking']['max_iterations_long'],
+        max_iterations=config["tracking"]["max_iterations_long"],
+        n_samples=config["tracking"]["max_iterations_long"],
         sampling_method="all",
-        analysis_type="stability")
+        analysis_type="stability",
+    )
 
     # load basename
-    basename = config['output']['basename']
-    path = config['output']['path']
+    basename = config["output"]["basename"]
+    path = config["output"]["path"]
 
     return coords, henon, tracking, long_tracking, path, basename
 
@@ -177,22 +185,38 @@ def get_config(config: dict):
 def get_output_config(path, basename, scan_name):
     o_tangent_stuff = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tangent_stuff")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tangent_stuff",
+    )
 
     o_tangent_raw = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tangent_raw")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tangent_raw",
+    )
 
     o_stability = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_stability")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_stability",
+    )
 
     o_coordinates = OutputConfig(
         path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_coordinates")
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_coordinates",
+    )
 
     o_rem = OutputConfig(
-        path=path,
-        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_rem")
+        path=path, basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_rem"
+    )
 
-    return o_tangent_stuff, o_tangent_raw, o_stability, o_coordinates, o_rem
+    o_lyapunov_birkhoff = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_lyapunov_birkhoff",
+    )
+
+    return (
+        o_tangent_stuff,
+        o_tangent_raw,
+        o_stability,
+        o_coordinates,
+        o_rem,
+        o_lyapunov_birkhoff,
+    )

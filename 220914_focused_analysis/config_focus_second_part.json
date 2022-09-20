@@ -3,13 +3,13 @@
         "coord1": "x",
         "coord2": "y",
         "coord1_min": 0.0,
-        "coord1_max": 0.6,
+        "coord1_max": 0.45,
         "coord2_min": 0.0,
-        "coord2_max": 0.6,
-        "samples_per_side": 300
+        "coord2_max": 0.45,
+        "samples_per_side": 200
     },
     "henon": {
-        "omega_base": [0.168, 0.201],
+        "omega_base": [0.28, 0.31],
         "epsilon": 32.0,
         "mu": 0.1
     },
@@ -22,15 +22,11 @@
     },
     "output": {
         "path": "/home/HPC/camontan/turchetti_paper/output/focused_scan",
-        "basename": "scan_168_201"
+        "basename": "focused_scan"
     },
     "scan": {
-        "henon:epsilon": [32.0, 0.0, 64.0],
-        "henon:mu": [0.0, 0.25, 0.5, 0.75, 1.0],
         "tracking:analysis_type": [
-            "stability",
-            "tangent_map",
-            "rem"
+            "lyapunov_birkhoff"
         ]
     }
 }

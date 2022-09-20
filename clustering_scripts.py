@@ -1,5 +1,8 @@
+import matplotlib.patches as patches
 import numpy as np
 import scipy as sp
+from matplotlib import gridspec
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 
@@ -60,3 +63,54 @@ def classify_data(ground_truth: np.ndarray, guess: np.ndarray):
         recall=recall,
         f1=f1,
     )
+
+
+def get_extents(data_list, cover_m=10):
+    val_min = np.nan
+    val_max = np.nan
+    for d in data_list:
+        if cover_m is not None:
+            d = cover_extreme_outliers(d, m=cover_m)
+        val_min = np.nanmin([val_min, np.nanmin(d)])
+        val_max = np.nanmax([val_max, np.nanmax(d)])
+    return val_min, val_max
+
+
+def compose_count_map(data_list, val_min, val_max, nbins=50):
+    count_map = np.zeros((len(data_list), nbins))
+    for i, d in enumerate(data_list):
+        count, bins = np.histogram(
+            d, bins=nbins, density=True, range=(val_min, val_max)
+        )
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+        count_map[i, :] = count
+    return count_map, bin_centers
+
+
+def make_colormap(
+    ax_colormap, count_map, data_list, time_list, val_min, val_max, patches_list=None
+):
+    mappable = ax_colormap.imshow(
+        np.log10(count_map),
+        aspect="auto",
+        origin="lower",
+        extent=(val_min, val_max, 0, len(data_list)),
+    )
+    ax_colormap.set_yticks(np.arange(len(time_list)) + 0.5)
+    ax_colormap.set_yticklabels([f"$10^{int(np.log10(t))}$" for t in time_list])
+
+    if patches_list is not None:
+        d_rect_x = (val_max - val_min) * 0.005
+        d_rect_y = 0.01
+        for p in patches_list:
+            rect = patches.Rectangle(
+                (val_min + d_rect_x, p + d_rect_y),
+                val_max - val_min - d_rect_x * 2,
+                1 - d_rect_y * 2,
+                linewidth=3,
+                edgecolor="r",
+                facecolor="none",
+            )
+            ax_colormap.add_patch(rect)
+
+    return ax_colormap, mappable

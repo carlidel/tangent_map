@@ -1,3 +1,5 @@
+import datetime
+import time
 from dataclasses import dataclass, field
 from random import shuffle
 from typing import Literal
@@ -11,6 +13,14 @@ from numba import njit
 from tqdm import tqdm
 
 from config_standard import CoordinateConfig, HenonConfig, OutputConfig, TrackingConfig
+
+
+@njit
+def birkhoff_weights(n):
+    weights = np.arange(n, dtype=np.float64)
+    weights /= n
+    weights = np.exp(-1 / (weights * (1 - weights)))
+    return weights / np.sum(weights)
 
 
 # @njit
@@ -125,6 +135,108 @@ def track_tangent_map(
             print(f"Saved time {i}.")
 
 
+def track_lyapunov_birkhoff(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    times = tracking.get_samples()
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+    # matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=True)
+    matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+    construct = hm.lyapunov_birkhoff_construct(coord.total_samples, 10)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+    )
+
+    for t in tqdm(times):
+        particles = hm.particles(x, px, y, py)
+        vectors_x = hm.vector_4d(
+            np.array([[1.0, 0.0, 0.0, 0.0] for i in range(coord.total_samples)])
+        )
+
+        construct.reset()
+        construct.change_weights(t)
+
+        for i in tqdm(range(1, t + 1)):
+            vectors_x.normalize()
+            matrices.set_with_tracker(engine, particles, henon.mu)
+            vectors_x.multiply(matrices)
+            construct.add(vectors_x)
+            engine.track(particles, 1, henon.mu, henon.barrier)
+
+        with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+            f.create_dataset(
+                f"{t}/lyapunov_x", data=construct.get_values_raw(), compression="gzip"
+            )
+            f.create_dataset(
+                f"{t}/lyapunov_b_x", data=construct.get_values_b(), compression="gzip"
+            )
+
+        print(f"Saved time {t}.")
+
+
+# def track_lyapunov_birkhoff(
+#     coord: CoordinateConfig,
+#     henon: HenonConfig,
+#     tracking: TrackingConfig,
+#     output: OutputConfig,
+# ):
+#     times = tracking.get_samples()
+#     x, px, y, py = coord.get_variables()
+
+#     with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+#         f.create_dataset("initial/x", data=x)
+#         f.create_dataset("initial/px", data=px)
+#         f.create_dataset("initial/y", data=y)
+#         f.create_dataset("initial/py", data=py)
+#     # matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=True)
+#     matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+#     engine = hm.henon_tracker(
+#         tracking.max_iterations + 1,
+#         henon.omega_x,
+#         henon.omega_y,
+#         henon.modulation_kind,
+#         henon.omega_0,
+#         henon.epsilon,
+#     )
+
+#     for t in tqdm(times):
+#         particles = hm.particles(x, px, y, py)
+#         vectors_x = hm.vector_4d(
+#             np.array([[1.0, 0.0, 0.0, 0.0] for i in range(coord.total_samples)])
+#         )
+#         lyapunov_x = 0.0
+#         lyapunov_b_x = 0.0
+#         weights = birkhoff_weights(t)
+
+#         for i in tqdm(range(1, t + 1)):
+#             engine.track(particles, 1, henon.mu, henon.barrier)
+#             matrices.set_with_tracker(engine, particles, henon.mu)
+#             vectors_x.multiply(matrices)
+#             vals_x = vectors_x.get_vectors()
+#             lyapunov_x += np.log(np.linalg.norm(vals_x, axis=1))
+#             lyapunov_b_x += np.log(np.linalg.norm(vals_x, axis=1)) * weights[i - 1]
+
+#         with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+#             f.create_dataset(f"{t}/lyapunov_x", data=lyapunov_x, compression="gzip")
+#             f.create_dataset(f"{t}/lyapunov_b_x", data=lyapunov_b_x, compression="gzip")
+
+#         print(f"Saved time {t}.")
+
+
 def track_coordinates(
     coord: CoordinateConfig,
     henon: HenonConfig,
@@ -189,6 +301,89 @@ def track_coordinates(
                 f[f"py"][i - 1, :] = particles.get_py()
 
             print(f"Saved time {i}.")
+
+
+def batch_track_coordinates(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    BATCH_SIZE = 10000
+    times = tracking.get_samples()
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+
+    particles = hm.particles(x, px, y, py)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+    )
+    storage = hm.storage_gpu(len(x), BATCH_SIZE)
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset(
+            f"x",
+            # compression="gzip",
+            chunks=(BATCH_SIZE, coord.total_samples),
+            shape=(tracking.max_iterations, coord.total_samples),
+            dtype=np.float64,
+        )
+        f.create_dataset(
+            f"px",
+            # compression="gzip",
+            chunks=(BATCH_SIZE, coord.total_samples),
+            shape=(tracking.max_iterations, coord.total_samples),
+            dtype=np.float64,
+        )
+        f.create_dataset(
+            f"y",
+            # compression="gzip",
+            chunks=(BATCH_SIZE, coord.total_samples),
+            shape=(tracking.max_iterations, coord.total_samples),
+            dtype=np.float64,
+        )
+        f.create_dataset(
+            f"py",
+            # compression="gzip",
+            chunks=(BATCH_SIZE, coord.total_samples),
+            shape=(tracking.max_iterations, coord.total_samples),
+            dtype=np.float64,
+        )
+
+    for i in range(1, tracking.max_iterations + 1):
+        engine.track(particles, 1, henon.mu, henon.barrier)
+        storage.store(particles)
+
+        if i % BATCH_SIZE == 0:
+            print(f"Saving time {i}.")
+            t_now = time.time()
+
+            with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+                print(f"Saving x.")
+                f[f"x"][i - BATCH_SIZE : i, :] = storage.get_x()
+                print(f"Saving px.")
+                f[f"px"][i - BATCH_SIZE : i, :] = storage.get_px()
+                print(f"Saving y.")
+                f[f"y"][i - BATCH_SIZE : i, :] = storage.get_y()
+                print(f"Saving py.")
+                f[f"py"][i - BATCH_SIZE : i, :] = storage.get_py()
+
+            print(f"Saved time {i}.")
+            print(f"Time taken: {(time.time() - t_now)/60} min.")
+            print(
+                f"Time remaining: {(time.time() - t_now)/60 * (tracking.max_iterations - i)/BATCH_SIZE} min."
+            )
+            storage.reset()
 
 
 def track_stability(
