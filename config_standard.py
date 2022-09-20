@@ -114,7 +114,7 @@ def f_to_s_without_dot(f):
     )
 
 
-def unpack_scans(config: dict) -> list[dict]:
+def unpack_scans(config: dict):
     keys = []
     values = []
     if "scan" in config:
