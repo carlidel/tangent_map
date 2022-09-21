@@ -333,28 +333,24 @@ def batch_track_coordinates(
         f.create_dataset(
             f"x",
             # compression="gzip",
-            chunks=(BATCH_SIZE, coord.total_samples),
             shape=(tracking.max_iterations, coord.total_samples),
             dtype=np.float64,
         )
         f.create_dataset(
             f"px",
             # compression="gzip",
-            chunks=(BATCH_SIZE, coord.total_samples),
             shape=(tracking.max_iterations, coord.total_samples),
             dtype=np.float64,
         )
         f.create_dataset(
             f"y",
             # compression="gzip",
-            chunks=(BATCH_SIZE, coord.total_samples),
             shape=(tracking.max_iterations, coord.total_samples),
             dtype=np.float64,
         )
         f.create_dataset(
             f"py",
             # compression="gzip",
-            chunks=(BATCH_SIZE, coord.total_samples),
             shape=(tracking.max_iterations, coord.total_samples),
             dtype=np.float64,
         )
