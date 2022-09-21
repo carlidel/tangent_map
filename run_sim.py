@@ -8,7 +8,6 @@ import h5py
 import henon_map_cpp as hm
 import matplotlib.pyplot as plt
 import numpy as np
-import pyarrow as pa
 from numba import njit
 from tqdm import tqdm
 
