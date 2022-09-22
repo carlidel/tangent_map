@@ -76,11 +76,11 @@ def get_extents(data_list, cover_m=10):
     return val_min, val_max
 
 
-def compose_count_map(data_list, val_min, val_max, nbins=50):
+def compose_count_map(data_list, val_min, val_max, nbins=50, density=True):
     count_map = np.zeros((len(data_list), nbins))
     for i, d in enumerate(data_list):
         count, bins = np.histogram(
-            d, bins=nbins, density=True, range=(val_min, val_max)
+            d, bins=nbins, density=density, range=(val_min, val_max)
         )
         bin_centers = (bins[:-1] + bins[1:]) / 2
         count_map[i, :] = count

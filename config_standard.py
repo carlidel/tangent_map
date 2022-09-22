@@ -212,6 +212,11 @@ def get_output_config(path, basename, scan_name):
         basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_lyapunov_birkhoff",
     )
 
+    o_tune = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tune",
+    )
+
     return (
         o_tangent_stuff,
         o_tangent_raw,
@@ -219,4 +224,5 @@ def get_output_config(path, basename, scan_name):
         o_coordinates,
         o_rem,
         o_lyapunov_birkhoff,
+        o_tune,
     )

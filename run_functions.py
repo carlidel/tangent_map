@@ -11,7 +11,8 @@ import numpy as np
 from numba import njit
 from tqdm import tqdm
 
-from config_standard import CoordinateConfig, HenonConfig, OutputConfig, TrackingConfig
+from config_standard import (CoordinateConfig, HenonConfig, OutputConfig,
+                             TrackingConfig)
 
 
 @njit
@@ -498,3 +499,78 @@ def track_tangent_map_raw(
                     f"{i}/tangent_rev", data=matrices_rev, compression="gzip"
                 )
             print(f"Saved time {i}.")
+
+
+def track_tune_cpu(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    times = tracking.get_samples()
+
+    from_idx = []
+    to_idx = []
+    for t in times:
+        from_idx.append(0)
+        to_idx.append(t // 2)
+        from_idx.append(t // 2)
+        to_idx.append((t // 2) * 2)
+    from_idx = np.array(from_idx)
+    to_idx = np.array(to_idx)
+
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+
+    particles = hm.particles(x, px, y, py, force_CPU=True)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+        force_CPU=True,
+    )
+
+    start_time = time.time()
+    tune_df = engine.tune_all(
+        particles,
+        np.max(times),
+        henon.mu,
+        henon.barrier,
+        from_idx=from_idx,
+        to_idx=to_idx,
+    )
+    end_time = time.time()
+    print(f"Time elapsed: {end_time - start_time} s.")
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        for index, row in tune_df.iterrows():
+            # check if datasets already exist
+            name = "tune_x_birkhoff"
+            if f'{row["from"]}' in f:
+                if f"{row['to']}" in f[f'{row["from"]}']:
+                    if name in f[f'{row["from"]}'][f"{row['to']}"]:
+                        print(f"Dataset {name} already exists in {row['from']}/{row['to']}.")
+                        continue
+
+            f.create_dataset(
+                f'{row["from"]}/{row["to"]}/tune_x_birkhoff',
+                data=row["tune_x_birkhoff"],
+            )
+            f.create_dataset(
+                f'{row["from"]}/{row["to"]}/tune_y_birkhoff',
+                data=row["tune_y_birkhoff"],
+            )
+            f.create_dataset(
+                f'{row["from"]}/{row["to"]}/tune_x_fft', data=row["tune_x_fft"]
+            )
+            f.create_dataset(
+                f'{row["from"]}/{row["to"]}/tune_y_fft', data=row["tune_y_fft"]
+            )

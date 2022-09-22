@@ -28,6 +28,7 @@ from run_functions import (
     track_stability,
     track_tangent_map,
     track_tangent_map_raw,
+    track_tune_cpu,
 )
 
 # create parser
@@ -52,6 +53,7 @@ for config in tqdm(config_list):
         o_coordinates,
         o_rem,
         o_lyapunov_birkhoff,
+        o_tune,
     ) = get_output_config(path, basename, config["scan_name"])
 
     if tracking.analysis_type == "stability" or tracking.analysis_type == "all":
@@ -77,3 +79,7 @@ for config in tqdm(config_list):
     if tracking.analysis_type == "lyapunov_birkhoff" or tracking.analysis_type == "all":
         print("Tracking lyapunov birkhoff")
         track_lyapunov_birkhoff(coords, henon, tracking, o_lyapunov_birkhoff)
+
+    if tracking.analysis_type == "tune" or tracking.analysis_type == "all":
+        print("Tracking tune")
+        track_tune_cpu(coords, henon, tracking, o_tune)
