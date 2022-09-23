@@ -24,6 +24,7 @@ from run_functions import (
     batch_track_coordinates,
     track_coordinates,
     track_lyapunov_birkhoff,
+    track_lyapunov_birkhoff_multi,
     track_rem,
     track_stability,
     track_tangent_map,
@@ -78,7 +79,7 @@ for config in tqdm(config_list):
 
     if tracking.analysis_type == "lyapunov_birkhoff" or tracking.analysis_type == "all":
         print("Tracking lyapunov birkhoff")
-        track_lyapunov_birkhoff(coords, henon, tracking, o_lyapunov_birkhoff)
+        track_lyapunov_birkhoff_multi(coords, henon, tracking, o_lyapunov_birkhoff)
 
     if tracking.analysis_type == "tune" or tracking.analysis_type == "all":
         print("Tracking tune")

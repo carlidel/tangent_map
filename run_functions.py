@@ -11,8 +11,7 @@ import numpy as np
 from numba import njit
 from tqdm import tqdm
 
-from config_standard import (CoordinateConfig, HenonConfig, OutputConfig,
-                             TrackingConfig)
+from config_standard import CoordinateConfig, HenonConfig, OutputConfig, TrackingConfig
 
 
 @njit
@@ -186,6 +185,53 @@ def track_lyapunov_birkhoff(
             )
 
         print(f"Saved time {t}.")
+
+
+def track_lyapunov_birkhoff_multi(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    times = tracking.get_samples()
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+    # matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=True)
+    matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+    construct = hm.lyapunov_birkhoff_construct_multi(coord.total_samples, times)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+    )
+
+    particles = hm.particles(x, px, y, py)
+    vectors_x = hm.vector_4d(
+        np.array([[1.0, 0.0, 0.0, 0.0] for i in range(coord.total_samples)])
+    )
+
+    for i in tqdm(range(1, np.max(times) + 1)):
+        vectors_x.normalize()
+        matrices.set_with_tracker(engine, particles, henon.mu)
+        vectors_x.multiply(matrices)
+        construct.add(vectors_x)
+        engine.track(particles, 1, henon.mu, henon.barrier)
+
+    raw_lyap = construct.get_values_raw()
+    b_lyap = construct.get_values_b()
+
+    for i, t in enumerate(times):
+        with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+            f.create_dataset(f"{t}/lyapunov_x", data=raw_lyap[i], compression="gzip")
+            f.create_dataset(f"{t}/lyapunov_b_x", data=b_lyap[i], compression="gzip")
 
 
 # def track_lyapunov_birkhoff(
@@ -557,7 +603,9 @@ def track_tune_cpu(
             if f'{row["from"]}' in f:
                 if f"{row['to']}" in f[f'{row["from"]}']:
                     if name in f[f'{row["from"]}'][f"{row['to']}"]:
-                        print(f"Dataset {name} already exists in {row['from']}/{row['to']}.")
+                        print(
+                            f"Dataset {name} already exists in {row['from']}/{row['to']}."
+                        )
                         continue
 
             f.create_dataset(
