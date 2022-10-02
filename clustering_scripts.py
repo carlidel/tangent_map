@@ -65,10 +65,12 @@ def classify_data(ground_truth: np.ndarray, guess: np.ndarray):
     )
 
 
-def get_extents(data_list, cover_m=10):
+def get_extents(data_list, cover_m=10, clean_data=True):
     val_min = np.nan
     val_max = np.nan
     for d in data_list:
+        if clean_data:
+            d = d[~np.isnan(d) & ~np.isinf(d)]
         if cover_m is not None:
             d = cover_extreme_outliers(d, m=cover_m)
         val_min = np.nanmin([val_min, np.nanmin(d)])
