@@ -134,6 +134,52 @@ def track_tangent_map(
             print(f"Saved time {i}.")
 
 
+def track_megno(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    times = tracking.get_samples()
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+
+    particles = hm.particles(x, px, y, py)
+    # matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=True)
+    matrices_a = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+    matrices_b = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+    megno = hm.megno_construct(coord.total_samples)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+    )
+
+    matrices_b.structured_multiply(engine, particles, henon.mu)
+
+    for i in tqdm(range(1, tracking.max_iterations + 1)):
+        engine.track(particles, 1, henon.mu, henon.barrier)
+        matrices_a.structured_multiply(engine, particles, henon.mu)
+        megno.add(matrices_a, matrices_b)
+        matrices_b.explicit_copy(matrices_a)
+
+        if i in times:
+            print(f"Saving time {i}.")
+            megno_vals = megno.get_values()
+            with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+                f.create_dataset(f"{i}/megno", data=megno_vals / i, compression="gzip")
+
+            print(f"Saved time {i}.")
+
+
 def track_lyapunov_birkhoff(
     coord: CoordinateConfig,
     henon: HenonConfig,

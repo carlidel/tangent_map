@@ -217,6 +217,11 @@ def get_output_config(path, basename, scan_name):
         basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_tune",
     )
 
+    o_megno = OutputConfig(
+        path=path,
+        basename=f"{basename}{'_' if basename!='' else ''}{scan_name}_megno",
+    )
+
     return (
         o_tangent_stuff,
         o_tangent_raw,
@@ -225,4 +230,5 @@ def get_output_config(path, basename, scan_name):
         o_rem,
         o_lyapunov_birkhoff,
         o_tune,
+        o_megno,
     )

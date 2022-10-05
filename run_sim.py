@@ -25,6 +25,7 @@ from run_functions import (
     track_coordinates,
     track_lyapunov_birkhoff,
     track_lyapunov_birkhoff_multi,
+    track_megno,
     track_rem,
     track_stability,
     track_tangent_map,
@@ -55,6 +56,7 @@ for config in tqdm(config_list):
         o_rem,
         o_lyapunov_birkhoff,
         o_tune,
+        o_megno,
     ) = get_output_config(path, basename, config["scan_name"])
 
     if tracking.analysis_type == "stability" or tracking.analysis_type == "all":
@@ -84,3 +86,7 @@ for config in tqdm(config_list):
     if tracking.analysis_type == "tune" or tracking.analysis_type == "all":
         print("Tracking tune")
         track_tune_cpu(coords, henon, tracking, o_tune)
+
+    if tracking.analysis_type == "megno" or tracking.analysis_type == "all":
+        print("Tracking megno")
+        track_megno(coords, henon, tracking, o_megno)
