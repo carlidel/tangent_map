@@ -175,9 +175,103 @@ def track_megno(
             print(f"Saving time {i}.")
             megno_vals = megno.get_values()
             with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
-                f.create_dataset(f"{i}/megno", data=megno_vals / i, compression="gzip")
+                f.create_dataset(f"{i}/megno", data=megno_vals, compression="gzip")
 
             print(f"Saved time {i}.")
+
+
+def track_megno_birkhoff(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    times = tracking.get_samples()
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+
+    particles = hm.particles(x, px, y, py)
+    # matrices = hm.matrix_4d_vector(coord.total_samples, force_cpu=True)
+    matrices_a = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+    matrices_b = hm.matrix_4d_vector(coord.total_samples, force_cpu=False)
+    megno = hm.megno_birkhoff_construct(coord.total_samples, times)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+    )
+
+    matrices_b.structured_multiply(engine, particles, henon.mu)
+
+    for i in tqdm(range(1, tracking.max_iterations + 1)):
+        engine.track(particles, 1, henon.mu, henon.barrier)
+        matrices_a.structured_multiply(engine, particles, henon.mu)
+        megno.add(matrices_a, matrices_b)
+        matrices_b.explicit_copy(matrices_a)
+
+    print(f"Saving all megno.")
+    megno_vals = megno.get_values()
+    
+    for i, t in enumerate(times):
+        with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+            f.create_dataset(f"{t}/megno", data=megno_vals[i], compression="gzip")
+
+    print(f"Saved!")
+
+
+def track_gpu_tune(
+    coord: CoordinateConfig,
+    henon: HenonConfig,
+    tracking: TrackingConfig,
+    output: OutputConfig,
+):
+    times = tracking.get_samples()
+    x, px, y, py = coord.get_variables()
+
+    with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+        f.create_dataset("initial/x", data=x)
+        f.create_dataset("initial/px", data=px)
+        f.create_dataset("initial/y", data=y)
+        f.create_dataset("initial/py", data=py)
+
+    particles = hm.particles(x, px, y, py)
+    tune_construct = hm.tune_birkhoff_construct(coord.total_samples, times)
+    tune_construct.first_add(particles)
+    engine = hm.henon_tracker(
+        tracking.max_iterations + 1,
+        henon.omega_x,
+        henon.omega_y,
+        henon.modulation_kind,
+        henon.omega_0,
+        henon.epsilon,
+    )
+
+    for i in tqdm(range(1, tracking.max_iterations + 1)):
+        engine.track(particles, 1, henon.mu, henon.barrier)
+        tune_construct.add(particles)
+
+    print(f"Saving all tunes.")
+    tune1_x = tune_construct.get_tune1_x()
+    tune1_y = tune_construct.get_tune1_y()
+    tune2_x = tune_construct.get_tune2_x()
+    tune2_y = tune_construct.get_tune2_y()
+    
+    for i, t in enumerate(times):
+        with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
+            f.create_dataset(f"{0}/{t}/tune_x_birkhoff", data=tune1_x[i], compression="gzip")
+            f.create_dataset(f"{0}/{t}/tune_y_birkhoff", data=tune1_y[i], compression="gzip")
+            f.create_dataset(f"{t}/{t*2}/tune_x_birkhoff", data=tune2_x[i], compression="gzip")
+            f.create_dataset(f"{t}/{t*2}/tune_y_birkhoff", data=tune2_y[i], compression="gzip")
+
+    print(f"Saved!")
 
 
 def track_lyapunov_birkhoff(

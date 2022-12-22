@@ -26,6 +26,8 @@ from run_functions import (
     track_lyapunov_birkhoff,
     track_lyapunov_birkhoff_multi,
     track_megno,
+    track_megno_birkhoff,
+    track_gpu_tune,
     track_rem,
     track_stability,
     track_tangent_map,
@@ -87,6 +89,14 @@ for config in tqdm(config_list):
         print("Tracking tune")
         track_tune_cpu(coords, henon, tracking, o_tune)
 
+    if tracking.analysis_type == "tune_gpu" or tracking.analysis_type == "all":
+        print("Tracking tune with gpu")
+        track_gpu_tune(coords, henon, tracking, o_tune)
+
     if tracking.analysis_type == "megno" or tracking.analysis_type == "all":
         print("Tracking megno")
         track_megno(coords, henon, tracking, o_megno)
+
+    if tracking.analysis_type == "megno_birkhoff" or tracking.analysis_type == "all":
+        print("Tracking megno birkhoff")
+        track_megno_birkhoff(coords, henon, tracking, o_megno)

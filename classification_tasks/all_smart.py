@@ -116,6 +116,12 @@ f_stab, f_lyap, f_rem, f_tune, f_birkhoff, f_megno = list(
 print("Loading ground truth...")
 
 data = f_stab["stability"][:]
+
+initial_x = f_stab["initial/x"][:]
+initial_y = f_stab["initial/y"][:]
+initial_px = f_stab["initial/px"][:]
+initial_py = f_stab["initial/py"][:]
+
 mask = np.log10(data) == 8
 print("mask_shape", mask.shape)
 
@@ -497,6 +503,10 @@ with open(f"{idx}_processed.pkl", "wb") as f:
         {
             "times": times,
             "times_fma": times_fma,
+            "initial_x": initial_x,
+            "initial_px": initial_px,
+            "initial_y": initial_y,
+            "initial_py": initial_py,
             "ground_truth_data": ground_truth_data,
             "ground_truth": ground_truth,
             "mask": mask,
