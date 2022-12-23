@@ -21,7 +21,7 @@
         "analysis_type": "tangent_map"
     },
     "output": {
-        "path": "/home/HPC/camontan/turchetti_paper/",
+        "path": ".",
         "basename": "scan_28_31"
     },
     "scan": {
