@@ -3,13 +3,13 @@
         "coord1": "x",
         "coord2": "y",
         "coord1_min": 0.0,
-        "coord1_max": 0.6,
+        "coord1_max": 0.45,
         "coord2_min": 0.0,
-        "coord2_max": 0.6,
+        "coord2_max": 0.45,
         "samples_per_side": 300
     },
     "henon": {
-        "omega_base": [0.168, 0.201],
+        "omega_base": [0.28, 0.31],
         "epsilon": 32.0,
         "mu": 0.1
     },
@@ -22,13 +22,13 @@
     },
     "output": {
         "path": ".",
-        "basename": "scan_168_201"
+        "basename": "scan_28_31"
     },
     "scan": {
         "henon:epsilon": [32.0, 0.0],
         "henon:mu": [0.0, 0.5],
         "tracking:analysis_type": [
-            "tune_gpu"
+            "megno", "megno_birkhoff", "tune_gpu"
         ]
     }
 }

@@ -243,7 +243,7 @@ def track_gpu_tune(
         f.create_dataset("initial/py", data=py)
 
     particles = hm.particles(x, px, y, py)
-    tune_construct = hm.tune_birkhoff_construct(coord.total_samples, times)
+    tune_construct = hm.tune_birkhoff_construct(coord.total_samples, times//2)
     tune_construct.first_add(particles)
     engine = hm.henon_tracker(
         tracking.max_iterations + 1,
@@ -266,10 +266,10 @@ def track_gpu_tune(
     
     for i, t in enumerate(times):
         with h5py.File(f"{output.path}/{output.basename}.h5", "a") as f:
-            f.create_dataset(f"{0}/{t}/tune_x_birkhoff", data=tune1_x[i], compression="gzip")
-            f.create_dataset(f"{0}/{t}/tune_y_birkhoff", data=tune1_y[i], compression="gzip")
-            f.create_dataset(f"{t}/{t*2}/tune_x_birkhoff", data=tune2_x[i], compression="gzip")
-            f.create_dataset(f"{t}/{t*2}/tune_y_birkhoff", data=tune2_y[i], compression="gzip")
+            f.create_dataset(f"{0}/{t//2}/tune_x_birkhoff", data=tune1_x[i], compression="gzip")
+            f.create_dataset(f"{0}/{t//2}/tune_y_birkhoff", data=tune1_y[i], compression="gzip")
+            f.create_dataset(f"{t//2}/{t}/tune_x_birkhoff", data=tune2_x[i], compression="gzip")
+            f.create_dataset(f"{t//2}/{t}/tune_y_birkhoff", data=tune2_y[i], compression="gzip")
 
     print(f"Saved!")
 
