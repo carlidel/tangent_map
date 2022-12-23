@@ -244,7 +244,7 @@ def track_gpu_tune(
 
     particles = hm.particles(x, px, y, py)
     tune_construct = hm.tune_birkhoff_construct(coord.total_samples, times)
-    
+    tune_construct.first_add(particles)
     engine = hm.henon_tracker(
         tracking.max_iterations + 1,
         henon.omega_x,
