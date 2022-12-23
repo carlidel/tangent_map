@@ -2,14 +2,6 @@
 /afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_tune_neo.json_1.json
 /afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_tune_neo.json_2.json
 /afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_tune_neo.json_3.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_megno_neo.json_0.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_megno_neo.json_1.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_megno_neo.json_2.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_168_201_megno_neo.json_3.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_megno_neo.json_0.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_megno_neo.json_1.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_megno_neo.json_2.json
-/afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_megno_neo.json_3.json
 /afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_tune_neo.json_0.json
 /afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_tune_neo.json_1.json
 /afs/cern.ch/work/c/camontan/public/tangent_map/htcondor_elements/configs/config_28_31_tune_neo.json_2.json
