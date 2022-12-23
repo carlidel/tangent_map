@@ -122,7 +122,9 @@ def unpack_scans(config: dict):
             keys.append(key)
             values.append(val)
     else:
-        config["scan_name"] = "default"
+        # set as scan_name "default" if there is no scan_name
+        if "scan_name" not in config:
+            config["scan_name"] = "default"
         return [config]
 
     config_list = []
